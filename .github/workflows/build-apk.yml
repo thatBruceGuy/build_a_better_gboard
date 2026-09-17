@@ -60,13 +60,26 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install the NDK this project pins
-        # build.gradle pins ndkVersion '28.2.13676358'. Runner images ship a
-        # different NDK, and Gradle will not silently substitute one.
-        run: sdkmanager --install "ndk;28.2.13676358" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install the SDK pieces this project pins
+        # Deliberately not using android-actions/setup-android: v3 of it tries to
+        # install the obsolete 'tools' package, which no longer exists in Google's
+        # repository, so sdkmanager exits 1 and the action fails. The runner image
+        # already ships the SDK and has all licenses accepted, so use it directly.
+        #
+        # build.gradle pins ndkVersion '28.2.13676358'; Gradle will not substitute
+        # whatever NDK the image happens to carry.
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | sort -V | tail -1)"
+          echo "using $SDKMANAGER"
+          "$SDKMANAGER" --install \
+            "ndk;28.2.13676358" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Derive version strings
         # build.gradle reads these from the environment and falls back to
@@ -78,7 +91,12 @@ jobs:
           echo "BRANCH_NAME=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
 
       - name: Assemble
-        run: ./gradlew --no-daemon ${{ inputs.variant || 'assembleUnstableDebug' }}
+        # gradle.properties caps the heap at 2048m, which is tight for this
+        # project's Compose + resource-merge workload. Runners have ~16GB, so
+        # override rather than editing the committed value that local builds use.
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx6g
+        run: ./gradlew --no-daemon --stacktrace ${{ inputs.variant || 'assembleUnstableDebug' }}
 
       - name: Show what was produced
         if: always()
