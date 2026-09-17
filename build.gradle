@@ -201,8 +201,12 @@ android {
         versionName getVersionName()
         versionCode getVersionCode()
 
-        applicationId 'org.futo.inputmethod.latin'
-        testApplicationId 'org.futo.inputmethod.latin.tests'
+        // Distinct from upstream FUTO so this fork installs alongside it rather than
+        // replacing it. The Kotlin/Java namespace is deliberately left as
+        // org.futo.inputmethod.latin to avoid a repo-wide package rename, which would
+        // make every future rebase against upstream painful.
+        applicationId 'org.futo.inputmethod.latin.compact'
+        testApplicationId 'org.futo.inputmethod.latin.compact.tests'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = false
     }
