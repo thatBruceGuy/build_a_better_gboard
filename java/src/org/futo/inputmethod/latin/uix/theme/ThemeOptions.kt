@@ -10,6 +10,7 @@ import org.futo.inputmethod.latin.uix.theme.presets.AMOLEDDarkPurple
 import org.futo.inputmethod.latin.uix.theme.presets.CatppuccinMocha
 import org.futo.inputmethod.latin.uix.theme.presets.ClassicMaterialDark
 import org.futo.inputmethod.latin.uix.theme.presets.ClassicMaterialLight
+import org.futo.inputmethod.latin.uix.theme.presets.CompactSlate
 import org.futo.inputmethod.latin.uix.theme.presets.CottonCandy
 import org.futo.inputmethod.latin.uix.theme.presets.DeepSeaDark
 import org.futo.inputmethod.latin.uix.theme.presets.DeepSeaLight
@@ -63,6 +64,7 @@ val ThemeOptions = mapOf(
     DevTheme.key to DevTheme,
     HighContrastYellow.key to HighContrastYellow,
     CatppuccinMocha.key to CatppuccinMocha,
+    CompactSlate.key to CompactSlate,
 )
 
 val ThemeOptionKeys = ThemeOptions.keys
