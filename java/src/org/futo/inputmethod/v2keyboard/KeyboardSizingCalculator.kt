@@ -228,7 +228,8 @@ fun getDefaultSettingForKind(kind: KeyboardSizeSettingKind, context: Context): S
         KeyboardSizeSettingKind.Portrait -> SavedKeyboardSizingSettings(
             currentMode = KeyboardMode.Regular,
             heightMultiplier = 1.0f * oldHeightMultiplier * portraitDeviceSizeHeightMultiplier,
-            paddingDp = DpRect(2.dp + extraSidePadding, 4.dp, 2.dp + extraSidePadding, 10.dp + oldBottomOffset),
+            // Compact layout: 6dp of bottom padding rather than 10dp.
+            paddingDp = DpRect(2.dp + extraSidePadding, 4.dp, 2.dp + extraSidePadding, 6.dp + oldBottomOffset),
             splitPaddingDp = DpRect(2.dp, 4.dp, 2.dp, 10.dp + oldBottomOffset),
             splitWidthFraction = portraitSplitWidthFraction,
             oneHandedDirection = OneHandedDirection.Right,

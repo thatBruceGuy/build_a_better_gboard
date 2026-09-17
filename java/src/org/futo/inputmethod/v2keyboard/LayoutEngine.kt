@@ -106,6 +106,16 @@ data class LayoutParams(
     val element: KeyboardLayoutElement,
 )
 
+/**
+ * How much taller the gap between rows is than the gap between keys in a row.
+ *
+ * Stock is 2.0. At the compact 30dp row pitch that would leave only ~22dp of visible
+ * keycap; at 1.0 the keycaps stay near 26dp and the pitch reduction comes out of dead
+ * space between rows instead of out of the keys. Hit testing uses the key bounds
+ * including the gap, so the touch targets are not reduced by the same amount.
+ */
+const val VerticalGapMultiplier: Float = 1.0f
+
 data class LayoutEngine(
     val context: Context,
     val keyboard: Keyboard,
@@ -113,7 +123,7 @@ data class LayoutEngine(
     val layoutParams: LayoutParams
 ) {
     val horizontalGap = layoutParams.gap
-    val verticalGap = layoutParams.gap * 2
+    val verticalGap = layoutParams.gap * VerticalGapMultiplier
 
     val effectiveRows = keyboard.getEffectiveRows(params.mId.mNumberRowMode)
 

@@ -24,11 +24,18 @@
 
     <dimen name="config_key_hysteresis_distance">8.0dp</dimen>
 
-    <!-- Preferable keyboard height in absolute scale: 1.285in -->
-    <!-- This config_default_keyboard_height value should match with keyboard-heights.xml -->
-    <dimen name="config_default_keyboard_height">205.6dp</dimen>
+    <!-- Compact layout: 4 key rows at a 30dp pitch, plus 6dp of bottom padding.
+         (126dp - 6dp) / 4 = 30dp per row at a height multiplier of 1.0, so the user's
+         height slider still works from a sane baseline instead of starting pre-shrunk.
+
+         config_min_keyboard_height is a *negative* fraction, which ResourceUtils reads
+         as a fraction of screen WIDTH rather than height. At the stock -61.8%p it
+         resolves to 61.8% of the display width, which on a 1440px-wide phone is 890px
+         and silently overrides config_default_keyboard_height entirely. It has to come
+         down too or the value above does nothing. -->
+    <dimen name="config_default_keyboard_height">126dp</dimen>
     <fraction name="config_max_keyboard_height">46%p</fraction>
-    <fraction name="config_min_keyboard_height">-61.8%p</fraction>
+    <fraction name="config_min_keyboard_height">-20%p</fraction>
 
     <dimen name="config_more_keys_keyboard_key_height">52.8dp</dimen>
     <!-- Amount of allowance for selecting keys in a mini popup keyboard by sliding finger. -->
