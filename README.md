@@ -13,7 +13,10 @@ Upstream's README is kept at [README-FUTO.md](README-FUTO.md).
 
 Three keyboard screenshots from the same phone were measured pixel by pixel
 with [`tools/measure_keyboard.py`](tools/measure_keyboard.py), not estimated.
-All were 1440px wide, so they compare directly.
+All were 1440px wide, so they compare directly. The tool's full output for all
+three is kept verbatim in
+[`tools/reference-measurements.txt`](tools/reference-measurements.txt), which is
+the baseline a re-measurement should be diffed against.
 
 | | Samsung (smallest) | Gboard | FUTO (stock) |
 |---|---|---|---|
@@ -25,8 +28,26 @@ All were 1440px wide, so they compare directly.
 | Bottom padding | 22px | 42px / 12dp | 35px / 10dp |
 | **Total panel** | **1034px / 295dp** | **845px / 241dp** | **~821px / ~235dp** |
 
-Two results are worth stating plainly, because they are the opposite of what the
-screenshots suggest:
+One caveat on that last column before anything else, because it is easy to
+misread. It is not FUTO at its defaults. FUTO's default row height on this phone
+works out to about 61dp:
+
+```
+getDefaultKeyboardHeight = max(min(205.6dp * 3.5, 0.46 * 3088), 0.618 * 1440)
+                         = max(min(719.6, 1420), 890) = 890px
+singularRowHeight        = (890 - 35) / 4 = 214px = 61dp
+```
+
+The measured pitch was 35.1dp, so a height multiplier of roughly 0.58 was
+already set in settings when the screenshot was taken. Much of the easy headroom
+had been spent before this fork started, and the fork's gain over a *fresh*
+FUTO install is correspondingly larger than the 35.1dp-to-30dp the table
+suggests. Since this fork has its own applicationId it installs with a fresh
+datastore, so it starts at a multiplier of 1.0 and the 30dp pitch is what a new
+install actually gets.
+
+Two further results are worth stating plainly, because they are the opposite of
+what the screenshots suggest:
 
 **FUTO's key rows were already tighter than Gboard's** — 35.1dp pitch against
 37.4dp, 26.9dp keycaps against 28.6dp. The keys were never the problem.
@@ -72,12 +93,29 @@ against the source three ways: `ActionBarHeight = 40.dp` against a measured
 
 Portrait only. `values-land` keeps its own heights.
 
+Where the 595px comes from, so a later change can be re-derived rather than
+guessed at:
+
+```
+getDefaultKeyboardHeight = max(min(126dp * 3.5, 0.46 * 3088), 0.20 * 1440)
+                         = max(min(441, 1420), 288) = 441px
+singularRowHeight        = (441 - 21) / 4 = 105px = 30dp   (at multiplier 1.0)
+keycap height            = 105 - 14 (vertical gap) = 91px
+total, no number row     = 4 * 105 + 21 + 140 (bar) + 14 (top pad) = 595px
+total, number row on     = 4.5 * 105 + 21 + 140 + 14 = 648px
+```
+
+Note that `config_min_keyboard_height` at −20%p resolves to 288px here, still
+below the 441px the default gives. Raising the default without checking that
+minimum is how the stock values ended up with a dead `config_default_keyboard_height`.
+
 ## Verifying a change
 
 The point of the measurement tool is that layout changes get checked against
 numbers rather than impressions:
 
 ```bash
+pip install pillow numpy
 # Screenshot the keyboard, cropped so the image bottom is the screen bottom.
 python3 tools/measure_keyboard.py shot.png --density 3.5
 ```
@@ -86,6 +124,10 @@ Expect a row pitch of 105px, keycaps of 91px, chrome of 140px and a total of
 about 595px. Then screenshot again with the actions expanded: the total should
 be unchanged, which is the test for change 1. The tool warns if the screenshot
 is cropped into the keyboard, which makes the total meaningless.
+
+[`tools/reference-measurements.txt`](tools/reference-measurements.txt) holds the
+same tool's output for the three reference keyboards, in the same format, so a
+new run can be compared against it line for line.
 
 A toolbar or suggestion strip of icons can look like a key row to the detector.
 The `keys` column tells them apart — letter rows have 9 or 10 — and
@@ -109,6 +151,23 @@ alongside stock FUTO rather than replacing it. The Kotlin/Java namespace is
 deliberately left as `org.futo.inputmethod.latin` to keep rebases against
 upstream manageable.
 
+## Two things that will waste your time
+
+Both were hit while writing this fork, so they are recorded rather than
+rediscovered.
+
+**`keyboardFade0` and `keyboardFade1` are dead parameters.**
+`extendedDarkColorScheme` and its light counterpart accept them
+(`ColorScheme.kt` lines 182-183 and 272-273) but never use them — they are not
+fields on `ExtraColors` and nothing reads them. Fourteen existing presets set
+them and none of them have any effect. The real mechanism for a panel gradient
+is `keyboardBackgroundGradient: Brush?`, which is a genuine `ExtraColors` field.
+`CompactSlate` uses that.
+
+**The number row toggle needed no code.** `Default/qwerty.yaml` sets no
+`numberRowMode`, so it already resolves to `UserConfigurable` and the setting is
+reachable from preferences. Only `NumberRowHeight` needed changing.
+
 ## Known risks
 
 - **30dp pitch is past a comfortable default**, chosen deliberately. Type a
@@ -125,6 +184,20 @@ upstream manageable.
   real screenshot.
 
 ## Upstream
+
+This repo is rooted at a single import commit (`4874ce6`) whose tree is
+byte-for-byte upstream `a0b84ef`, not at the full upstream history. Upstream is
+43,613 commits reaching back to AOSP LatinIME in 2009 and about 555MB, which
+does not push in one pack. Nothing is lost — to diff or rebase against real
+upstream history:
+
+```bash
+git remote add upstream https://github.com/futo-org/android-keyboard
+git fetch upstream
+git diff a0b84ef HEAD
+```
+
+The fork's own changes are `git diff 4874ce6 HEAD`.
 
 GitHub's `futo-org/android-keyboard` is a read-only mirror of
 `gitlab.futo.org/keyboard/latinime`, so changes here cannot be sent upstream

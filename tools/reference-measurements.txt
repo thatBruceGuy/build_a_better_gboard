@@ -1,0 +1,99 @@
+Raw output of tools/measure_keyboard.py against the three reference
+screenshots. Generated 17 September 2026. All three are 1440px wide,
+from the same phone, at 3.5x density.
+
+This is the baseline the compact layout's targets were derived from, and
+what a re-measurement after a build should be compared against. Keeping the
+tool's own output format here rather than only the prose tables in README.md
+means a later comparison is like for like.
+
+================== SAMSUNG (at its smallest setting) ==================
+Band 1 is the toolbar icon strip, so --first-key-row 2.
+
+04b5b633-image.png: 1440 x 1246 px, density 3.5x (411dp wide)
+
+band   top   bot  keycap  pitch   keycap   pitch keys
+                    (px)   (px)     (dp)    (dp)
+  1*   251   323      73      -     20.9       -    5
+  2    392   518     127      -     36.3       -   10
+  3    544   693     150    152     42.9    43.4   10
+  4    720   870     151    176     43.1    50.3    9
+  5    895  1046     152    175     43.4    50.0    9
+  6   1070  1223     154    175     44.0    50.0    5
+
+   * counted as chrome, not as a key row (--first-key-row)
+
+panel top          y=212
+chrome above keys    180 px    51.4 dp
+bottom padding        22 px     6.3 dp
+total panel height  1034 px   295.4 dp
+side padding          24 px left, 24 px right
+
+================== GBOARD (the gray/orange layout) ==================
+
+5d6e54a9-image.png: 1440 x 1067 px, density 3.5x (411dp wide)
+
+band   top   bot  keycap  pitch   keycap   pitch keys
+                    (px)   (px)     (dp)    (dp)
+  1    404   497      94      -     26.9       -   10
+  2    526   625     100    122     28.6    34.9   10
+  3    657   756     100    131     28.6    37.4    9
+  4    788   887     100    131     28.6    37.4    9
+  5    919  1024     106    131     30.3    37.4    6
+
+panel top          y=222
+chrome above keys    182 px    52.0 dp
+bottom padding        42 px    12.0 dp
+total panel height   845 px   241.4 dp
+side padding          17 px left, 17 px right
+
+================== FUTO (stock, actions expanded) ==================
+This screenshot is cropped at the bottom; the tool detects that.
+Its toolbar and suggestion strips are sparse icons, so they are not
+detected as bands and fall into the 294px chrome figure.
+
+fe6854a9-image.png: 1440 x 964 px, density 3.5x (411dp wide)
+
+band   top   bot  keycap  pitch   keycap   pitch keys
+                    (px)   (px)     (dp)    (dp)
+  1    496   589      94      -     26.9       -   10
+  2    619   712      94    123     26.9    35.1    9
+  3    742   835      94    123     26.9    35.1    7
+  4    865   963      99    123     28.3    35.1    2
+
+panel top          y=202
+chrome above keys    294 px    84.0 dp
+bottom padding         0 px     0.0 dp
+total panel height   762 px   217.7 dp
+side padding          15 px left, 15 px right
+
+warning: the last key row touches the bottom of the image, so the screenshot is
+cropped. Bottom padding and the total are wrong. Re-crop to the screen bottom.
+
+
+================== NOTES ON READING THIS ==================
+
+The "keys" column counts detected keys in that row. Letter rows show 9 or 10.
+Lower counts mean either a bottom row (shift/?123/space/enter merge into fewer
+wide keys) or an icon strip. FUTO's row 3 showing 7 and row 4 showing 2 is the
+detector merging adjacent wide keys at the default threshold; the row geometry
+(top, bottom, pitch) is unaffected and is what matters here.
+
+Samsung's band 2 (the number row) has no pitch figure because band 1 above it
+was excluded as chrome, so there is no preceding key row to measure from. Its
+real pitch against the row below is 152px.
+
+Gboard's row 1 is a real number row with keycaps. FUTO has no number row at all
+in this configuration; its digits are superscript hints on the QWERTY row, which
+is the single biggest reason it can beat Gboard on total height.
+
+The three totals, for reference:
+    Samsung  1034px / 295dp
+    Gboard    845px / 241dp
+    FUTO     ~821px / ~235dp  (computed; the screenshot is cropped)
+    Target    595px / 170dp
+
+One caveat on the FUTO column, which matters when reading it as "stock": see
+the height-multiplier note in README.md. The measured 35.1dp pitch is not
+FUTO's default -- it is FUTO with a height multiplier of roughly 0.58 already
+set in settings. FUTO's own default on this phone works out to about 61dp.
