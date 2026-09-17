@@ -8,7 +8,14 @@ import org.futo.inputmethod.latin.settings.Settings
 
 object RowKeyListSerializer : SpacedListSerializer<Key>(KeyPathSerializer)
 
-const val NumberRowHeight: Double = 0.8
+/**
+ * Height of the number row as a fraction of a normal letter row.
+ *
+ * Raised from the stock 0.8 because the compact layout's letter rows are shorter: at
+ * 0.8 the digits looked cramped against them. For reference, Gboard's ratio is 0.94
+ * and the Samsung keyboard's is 0.84.
+ */
+const val NumberRowHeight: Double = 0.85
 
 enum class RowNumberRowMode(val displayByDefault: Boolean, val displayWhenExplicitlyActive: Boolean, val displayWhenExplicitlyInactive: Boolean) {
     Default(true, true, true),
