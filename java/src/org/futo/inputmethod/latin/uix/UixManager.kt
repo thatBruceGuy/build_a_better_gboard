@@ -834,10 +834,12 @@ class UixManager(private val latinIME: LatinIME) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(with(LocalDensity.current) {
-                            currWindowActionWindow.value?.fixedWindowHeight ?: ((latinIME
+                            // No ActionBarHeight addition for the expanded state: the
+                            // action bar is now a constant height and the expanded
+                            // actions row is an overlay.
+                            currWindowActionWindow.value?.fixedWindowHeight ?: (latinIME
                                 .getInputViewHeight()
-                                .toFloat() / heightDiv.toFloat()).toDp() +
-                                    if (actionsExpanded) ActionBarHeight else 0.dp)
+                                .toFloat() / heightDiv.toFloat()).toDp()
                         })
                         .safeKeyboardPadding()
                 ) {
@@ -1157,10 +1159,7 @@ class UixManager(private val latinIME: LatinIME) {
     private fun BoxScope.OneHandedOptions(size: OneHandedKeyboardSize) = with(LocalDensity.current) {
         Box(Modifier.matchParentSize()) {
             Column(modifier = Modifier
-                .matchParentSize()
-                .absolutePadding(
-                    top = if (isActionsExpanded.value) ActionBarHeight else 0.dp
-                ), horizontalAlignment = when(size.direction) {
+                .matchParentSize(), horizontalAlignment = when(size.direction) {
                 // Aligned opposite of the keyboard
                 OneHandedDirection.Left -> Alignment.End
                 OneHandedDirection.Right -> Alignment.Start
@@ -1270,6 +1269,7 @@ class UixManager(private val latinIME: LatinIME) {
 
     @Composable
     fun Content() {
+        val view = LocalView.current
         ProvidersAndWrapper {
             InputDarkener(isInputOverridden.value || isShowingActionEditor.value) {
                 closeActionWindow()
@@ -1342,6 +1342,37 @@ class UixManager(private val latinIME: LatinIME) {
                             }
                             .absoluteOffset { IntOffset(0, keyboardViewOffset.intValue) },
                             hidden = mainKeyboardHidden.value)
+
+                        // Drawn last so it sits over the top key row. Expanding the
+                        // actions therefore costs no height instead of pushing the
+                        // whole keyboard down by ActionBarHeight.
+                        // (The old-style action bar keeps its own inline layout, which
+                        // already fits within a single bar height.)
+                        val oldStyleActionsBar = useDataStore(OldStyleActionsBar)
+                        if(isActionsExpanded.value
+                            && !needToUseExpandableSuggestionUi
+                            && !mainKeyboardHidden.value
+                            && oldStyleActionsBar.value == false) {
+                            ExpandedActionsOverlay(
+                                onActionActivated = {
+                                    keyboardManagerForAction.performHapticAndAudioFeedback(
+                                        Constants.CODE_TAB,
+                                        view
+                                    )
+                                    onActionActivated(it)
+                                },
+                                onActionAltActivated = {
+                                    if (it.altPressImpl != null) {
+                                        keyboardManagerForAction.performHapticAndAudioFeedback(
+                                            Constants.CODE_TAB,
+                                            view
+                                        )
+                                    }
+                                    onActionAltActivated(it)
+                                },
+                                modifier = Modifier.align(Alignment.TopCenter)
+                            )
+                        }
                     }
 
                     if(latinIME.size.value !is FloatingKeyboardSize) {

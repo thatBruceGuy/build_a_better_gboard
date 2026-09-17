@@ -831,35 +831,18 @@ fun ActionBar(
 
     val oldActionBar = useDataStore(OldStyleActionsBar)
 
-    val useDoubleHeight = isActionsExpanded && oldActionBar.value == false
-
+    // Expanding the actions used to stack a second row on top of this one, making the
+    // bar 2 * ActionBarHeight and pushing the whole keyboard down by 40dp. The expanded
+    // row is now drawn by ExpandedActionsOverlay over the top key row instead, so the
+    // bar keeps a constant height and expanding costs no vertical space.
     Column(Modifier
         .height(
-            ActionBarHeight * (if (useDoubleHeight) 2 else 1).let {
-                if(needToUseExpandableSuggestionUi) {
-                    it - 1
-                } else {
-                    it
-                }
-            }
+            if (needToUseExpandableSuggestionUi) 0.dp else ActionBarHeight
         )
         .semantics {
             testTag = "ActionBar"
             testTagsAsResourceId = true
         }) {
-        if(isActionsExpanded && !oldActionBar.value) {
-            ActionSep()
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1.0f),
-                color = LocalKeyboardScheme.current.keyboardSurfaceDim//actionBarColor()
-            ) {
-                ActionItems(onActionActivated, onActionAltActivated)
-            }
-        }
-
         if(needToUseExpandableSuggestionUi) return@Column
         ActionSep()
 
@@ -931,6 +914,34 @@ fun ActionBar(
         }
 
         ActionSep(true)
+    }
+}
+
+/**
+ * The row of action icons shown while the actions are expanded.
+ *
+ * This is drawn over the top key row rather than stacked above the action bar, so
+ * expanding the actions does not make the keyboard taller. It is deliberately opaque
+ * and consumes its own touches: the keys underneath are covered while it is open, and
+ * a press there activates an action instead of falling through to the hidden key.
+ */
+@Composable
+fun ExpandedActionsOverlay(
+    onActionActivated: (Action) -> Unit,
+    onActionAltActivated: (Action) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.height(ActionBarHeight)) {
+        ActionSep()
+
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1.0f),
+            color = LocalKeyboardScheme.current.keyboardSurfaceDim
+        ) {
+            ActionItems(onActionActivated, onActionAltActivated)
+        }
     }
 }
 

@@ -25,10 +25,8 @@ import kotlinx.serialization.json.Json
 import org.futo.inputmethod.latin.FoldStateProvider
 import org.futo.inputmethod.latin.LatinIME
 import org.futo.inputmethod.latin.settings.SettingsValues
-import org.futo.inputmethod.latin.uix.OldStyleActionsBar
 import org.futo.inputmethod.latin.uix.SettingsKey
 import org.futo.inputmethod.latin.uix.UixManager
-import org.futo.inputmethod.latin.uix.getSetting
 import org.futo.inputmethod.latin.uix.getSettingBlocking
 import org.futo.inputmethod.latin.uix.setSettingBlocking
 import org.futo.inputmethod.latin.utils.ResourceUtils
@@ -588,11 +586,12 @@ class KeyboardSizingCalculator(val context: Context, val uixManager: UixManager)
         return 40.0f
     }
 
+    /**
+     * The action bar is always a single row tall. Expanding the actions used to return
+     * double this, which pushed the whole keyboard down by 40dp; the expanded row is now
+     * drawn as an overlay over the top key row (see ExpandedActionsOverlay) and costs no
+     * height.
+     */
     fun calculateTotalActionBarHeightPx(): Int =
-        when {
-            uixManager.actionsExpanded
-                    && (uixManager.currWindowActionWindow == null)
-                    && (context.getSetting(OldStyleActionsBar) == false) -> dp(2 * calculateSuggestionBarHeightDp())
-            else -> dp(calculateSuggestionBarHeightDp())
-        }
+        dp(calculateSuggestionBarHeightDp())
 }
