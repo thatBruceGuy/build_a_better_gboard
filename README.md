@@ -144,12 +144,74 @@ cd build_a_better_gboard
 `--recurse-submodules` is not optional: seven submodules carry the layouts,
 dictionaries, translations and native libs. Most are hosted on
 `gitlab.futo.org`, one on Hugging Face, so a GitHub-only clone will not build.
-An Android SDK and NDK are needed for the native code.
+All of them are public — no account or access request is needed.
 
 The applicationId is `org.futo.inputmethod.latin.compact`, so this installs
 alongside stock FUTO rather than replacing it. The Kotlin/Java namespace is
 deliberately left as `org.futo.inputmethod.latin` to keep rebases against
 upstream manageable.
+
+### What the build needs
+
+| | |
+|---|---|
+| JDK | 17 |
+| compileSdk | 35 |
+| NDK | 28.2.13676358 (pinned; Gradle will not substitute another) |
+| Gradle | 8.14.3, via the committed wrapper — do not install it separately |
+| Disk | ~20GB for the SDK, NDK and build output |
+| First build | ~20 minutes. Later builds are incremental and far quicker |
+
+The simplest way to get the first four is [Android
+Studio](https://developer.android.com/studio), which bundles the JDK and
+installs the SDK and NDK for you — open the project and accept the prompts. A
+plain command-line SDK works equally well if you prefer; see
+`.github/workflows/build-apk.yml`, which does exactly that and nothing more.
+
+No signing setup is needed. The debug config uses the committed
+`java/shared.keystore`, so the APK installs on a phone as built. That key is
+shared by everyone who builds this repo, which is fine for your own device and
+not for distributing to anyone else.
+
+### The fast loop
+
+CI takes about twenty minutes per change, because every run starts from a cold
+cache. Building locally and installing over USB turns a one-line dimension
+change into roughly a minute, which matters a lot when the remaining work is
+tuning numbers and looking at the result.
+
+On the phone: enable Developer Options (tap Build Number seven times in
+Settings → About), then turn on USB debugging and plug it in.
+
+```bash
+./gradlew installUnstableDebug     # builds and installs straight to the phone
+```
+
+Then, to measure what you just built:
+
+```bash
+adb shell wm density                        # confirms the density to pass below
+adb exec-out screencap -p > shot.png        # full screen, so nothing needs cropping
+python3 tools/measure_keyboard.py shot.png --density 3.5
+```
+
+A full-screen `screencap` is already framed the way the tool wants — the bottom
+of the image is the bottom of the screen — so there is no manual cropping step
+and no chance of silently measuring a cropped shot.
+
+Compare the output against
+[`tools/reference-measurements.txt`](tools/reference-measurements.txt).
+
+### Building without a computer
+
+Everything above can be done from a phone alone, using this repo's Actions tab:
+edit a file on github.com, which triggers a build, then download the APK from
+the Release when it finishes. That is a real workflow and it needs nothing
+installed. It is just the twenty-minute loop rather than the one-minute one, so
+it suits an occasional change better than a tuning session.
+
+Compiling this project *on* an Android device is not practical — the native code
+needs the Android NDK targeting four ABIs.
 
 ## Two things that will waste your time
 
