@@ -202,6 +202,47 @@ and no chance of silently measuring a cropped shot.
 Compare the output against
 [`tools/reference-measurements.txt`](tools/reference-measurements.txt).
 
+### When it crashes
+
+There is **no crash log file** in the debug APK, and the crash dialog never
+appears. FUTO wires up ACRA in `CrashLoggingApplication`, but the `unstable`
+flavor compiles `java/stable/java`, whose version opens with:
+
+```kotlin
+if(BuildConfig.DEBUG) return
+```
+
+So in an `assembleUnstableDebug` build ACRA is skipped entirely: no dialog, no
+`Crash.txt`, nothing written to disk. What is available instead:
+
+**From a computer — catches everything.** Android's logcat records the full
+stack trace whether or not the app handles it:
+
+```bash
+adb logcat -c                                   # clear, then reproduce the crash
+adb logcat | grep -i "futo\|AndroidRuntime"     # live
+adb logcat -d > crash.txt                       # dump the buffer to a file
+```
+
+`AndroidRuntime` is the tag an uncaught exception lands under, and it carries
+the stack trace. This is the reliable method — use it first.
+
+**On the phone alone.** Settings → Developer → **Copy logs** puts a JSON report
+on the clipboard, including recent log lines from the keyboard's own process and
+a dump of current settings. It builds its report directly and does not depend on
+ACRA, so unlike the crash dialog it does work in a debug build. Paste it
+somewhere before the buffer rolls over. It is labelled *"May contain sensitive
+data"* for good reason — read it before sharing, since a keyboard's logs can
+contain what was typed.
+
+To check the path end to end, Settings → Developer → **Crash the app** throws a
+deliberate exception.
+
+**If you ever build a release variant, change the ACRA mail target first.**
+`CrashLoggingApplication` sends reports to `keyboard@futo.org`. That address
+belongs to upstream, and crash reports from a modified fork are noise to them and
+useless to you. Point it somewhere you control, or drop the `mailSender` block.
+
 ### Building without a computer
 
 Everything above can be done from a phone alone, using this repo's Actions tab:
