@@ -31,7 +31,9 @@ on:
       - "claude/**"
 
 permissions:
-  contents: read
+  # write, not read: the Publish step below attaches the APK to a GitHub Release
+  # so it has a direct tap-to-install URL on a phone.
+  contents: write
 
 jobs:
   build:
@@ -109,6 +111,44 @@ jobs:
           path: build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish the APK to a rolling Release
+        # A workflow artifact is a zip behind a GitHub login, which is painful on a
+        # phone. A Release asset is a plain file with a stable, public URL you can
+        # tap straight from the phone's browser:
+        #
+        #   https://github.com/<owner>/<repo>/releases/latest/download/compact-keyboard.apk
+        #
+        # The asset name is fixed and --clobber replaces it, so that URL always
+        # points at the newest build. Not marked --prerelease: /releases/latest/
+        # skips prereleases and the stable URL would break.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          APK="$(find build/outputs/apk -name '*.apk' | head -1)"
+          echo "publishing $APK"
+          cp "$APK" compact-keyboard.apk
+
+          if ! gh release view latest >/dev/null 2>&1; then
+            gh release create latest \
+              --target "$GITHUB_SHA" \
+              --title "Compact Keyboard — latest build" \
+              --notes "Rolling build of the compact FUTO Keyboard fork.
+
+          Install: download \`compact-keyboard.apk\` below, tap it, allow installs
+          from unknown sources, then enable it under
+          Settings → System → Languages & input → On-screen keyboard.
+
+          The applicationId is \`org.futo.inputmethod.latin.compact.unstable\`, so it
+          installs alongside stock FUTO rather than replacing it.
+
+          Debug-signed with the repo's shared \`java/shared.keystore\` — fine for your
+          own phone, not for distribution."
+          fi
+
+          gh release upload latest compact-keyboard.apk --clobber
+          echo "APK: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/compact-keyboard.apk"
 
       - name: Upload build reports when the build fails
         if: failure()
