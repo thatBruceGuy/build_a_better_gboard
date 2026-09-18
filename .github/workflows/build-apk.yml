@@ -113,15 +113,20 @@ jobs:
           retention-days: 30
 
       - name: Publish the APK to a rolling Release
-        # A workflow artifact is a zip behind a GitHub login, which is painful on a
-        # phone. A Release asset is a plain file with a stable, public URL you can
-        # tap straight from the phone's browser:
+        # A workflow artifact is a zip that has to be downloaded and extracted. A
+        # Release asset is the .apk itself, at a stable URL you can tap straight from
+        # the phone's browser:
         #
         #   https://github.com/<owner>/<repo>/releases/latest/download/compact-keyboard.apk
         #
         # The asset name is fixed and --clobber replaces it, so that URL always
         # points at the newest build. Not marked --prerelease: /releases/latest/
         # skips prereleases and the stable URL would break.
+        #
+        # While this repo is private the URL needs a signed-in GitHub session in
+        # whatever browser opens it; it returns 404 to anonymous requests. Making
+        # the repo public would make it a bare link, at the cost of publishing the
+        # fork.
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
